@@ -353,6 +353,8 @@ def main():
         margin-top: 0.5rem;
         color: white;
         overflow: hidden;
+        position: relative;
+        z-index: 0;
     }
     .hero-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
     .hero-sub { font-size: 0.95rem; opacity: 0.88; }
@@ -385,7 +387,7 @@ def main():
         white-space: pre-wrap;
         min-height: 400px;
     }
-    div[data-testid="stMainBlockContainer"] { padding-top: 0; }
+    div[data-testid="stMainBlockContainer"] { padding-top: 1rem; }
     .stButton>button {
         background: linear-gradient(135deg, #106946, #0D5238) !important;
         color: white !important;
