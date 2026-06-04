@@ -335,6 +335,80 @@ HKTVmall 商戶招商提案
 
 
 # ──────────────────────────────────────────────
+# PPTX 簡報生成（置換 {{PLACEHOLDER}} 標籤）
+# ──────────────────────────────────────────────
+import io
+
+def generate_pptx_report(merchant_name: str, category: str, selected_pains: list, template_bytes: bytes = None) -> bytes:
+    """
+    讀取 PPTX 範本（bytes），置換所有 {{PLACEHOLDER}} 標籤，回傳 bytes（供下載）。
+    若 template_bytes 為 None，則從本地 template/ 目錄讀取（僅限本地開發）。
+    """
+    from pptx import Presentation
+
+    if template_bytes:
+        prs = Presentation(io.BytesIO(template_bytes))
+    else:
+        import os
+        template_path = "template/HKTVmall_Template_Base.pptx"
+        if not os.path.exists(template_path):
+            raise FileNotFoundError("請上傳 PPTX 範本，或確保 template/HKTVmall_Template_Base.pptx 存在。")
+        prs = Presentation(template_path)
+
+    # 收集痛點對應的 AI 方案句子
+    pain_solutions = []
+    for p in selected_pains:
+        if p in PAIN_POINT_MAPPING:
+            pain_solutions.append(PAIN_POINT_MAPPING[p])
+
+    # 第一個痛點當作主要標題，其餘當副標
+    primary_solution = pain_solutions[0] if pain_solutions else "全方位電商支援，助力業務增長"
+    solutions_text = "\n".join(f"• {s}" for s in pain_solutions) if pain_solutions else ""
+
+    PLACEHOLDER_REPLACEMENTS = {
+        "{{MERCHANT_NAME}}": merchant_name,
+        "{{PAIN_POINT_SOLUTION}}": primary_solution,
+        "{{PAIN_POINT_LIST}}": solutions_text,
+        "{{CATEGORY}}": category,
+        "{{DATE_TODAY}}": "2026",
+    }
+
+    replaced_count = 0
+
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            for para in shape.text_frame.paragraphs:
+                for run in para.runs:
+                    for placeholder, value in PLACEHOLDER_REPLACEMENTS.items():
+                        if placeholder in run.text:
+                            run.text = run.text.replace(placeholder, value)
+                            replaced_count += 1
+
+    # 另外處理段落级别的整体替换（跨 run 的情况）
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            for para in shape.text_frame.paragraphs:
+                para_text = "".join(r.text for r in para.runs)
+                for placeholder, value in PLACEHOLDER_REPLACEMENTS.items():
+                    if placeholder in para_text:
+                        # 找到第一个包含该 placeholder 的 run，替换整段
+                        for run in para.runs:
+                            if placeholder in run.text:
+                                run.text = run.text.replace(placeholder, value)
+                                replaced_count += 1
+                                break
+
+    buf = io.BytesIO()
+    prs.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
+
+# ──────────────────────────────────────────────
 # Streamlit UI（HKTVmall 綠 #106946 + 橙 #E47D21）
 # ──────────────────────────────────────────────
 def main():
@@ -504,6 +578,51 @@ def main():
                     file_name=filename,
                     mime="text/plain",
                 )
+
+    # ── PPTX 簡報下載 ──
+                st.markdown("---")
+                st.markdown('<div class="section-header">📊 客製化招商簡報 PPTX</div>', unsafe_allow_html=True)
+                st.info("👆 請先上傳已埋好 {{PLACEHOLDER}} 標籤的 PPTX 範本（僅需操作一次），再點擊生成按鈕。")
+                
+                uploaded_template = st.file_uploader(
+                    "📎 上傳 PPTX 範本（必須包含 {{MERCHANT_NAME}} 等標籤）",
+                    type=["pptx"],
+                    key="pptx_template",
+                    help="使用 PPT 軟件，在想客製化的文字方塊中輸入 {{MERCHANT_NAME}}、{{PAIN_POINT_SOLUTION}} 等標籤後上傳。標籤會被 AI 內容完全取代。",
+                )
+
+                if uploaded_template:
+                    st.session_state["pptx_template_bytes"] = uploaded_template.getvalue()
+                    st.success(f"✅ 範本已載入：{uploaded_template.name}（{len(uploaded_template.getvalue()):,} bytes）")
+
+                if st.button("🎯  生成並下載 PPTX 簡報", use_container_width=True, disabled=not uploaded_template):
+                    if not merchant_name.strip():
+                        st.warning("⚠️ 請先輸入商戶名稱")
+                    else:
+                        template_bytes = st.session_state.get("pptx_template_bytes")
+                        if not template_bytes:
+                            st.warning("⚠️ 請先上傳 PPTX 範本")
+                        else:
+                            with st.spinner("正在生成客製化簡報..."):
+                                try:
+                                    pptx_bytes = generate_pptx_report(
+                                        merchant_name=merchant_name,
+                                        category=category,
+                                        selected_pains=selected_pains,
+                                        template_bytes=template_bytes,
+                                    )
+                                    st.success("✅ 簡報生成完成！")
+                                    safe_name = "".join(c for c in merchant_name if c.isalnum() or c in (' ', '-', '_')).strip()
+                                    st.download_button(
+                                        label="📥 下載 PPTX 檔案",
+                                        data=pptx_bytes,
+                                        file_name=f"HKTVmall_招商簡報_{safe_name}.pptx",
+                                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                                        use_container_width=True,
+                                    )
+                                except Exception as e:
+                                    st.error(f"❌ PPTX 生成失敗：{e}")
+
         else:
             st.info("👈 請在左側填寫商戶資料，點擊「生成招商提案」按鈕開始。")
 
