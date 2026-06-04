@@ -347,10 +347,12 @@ def main():
 
     .hero-banner {
         background: linear-gradient(135deg, #106946 0%, #0D5238 45%, #E47D21 100%);
-        padding: 2rem 2rem 1.5rem;
+        padding: 1.5rem 2rem 1.5rem;
         border-radius: 16px;
         margin-bottom: 1.5rem;
+        margin-top: 0.5rem;
         color: white;
+        overflow: hidden;
     }
     .hero-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
     .hero-sub { font-size: 0.95rem; opacity: 0.88; }
