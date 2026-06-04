@@ -418,6 +418,169 @@ def generate_pptx_report(merchant_name: str, category: str, selected_pains: list
     return buf.getvalue()
 
 
+
+# ──────────────────────────────────────────────
+# PPTX 全自動注入（無需預埋 {{PLACEHOLDER}}）
+# ──────────────────────────────────────────────
+from lxml import etree
+
+def _backup_run_font(run):
+    """備份單一 run 的字體屬性"""
+    font = run.font
+    return {
+        'name': font.name,
+        'size': font.size,
+        'bold': font.bold,
+        'italic': font.italic,
+        'color_rgb': font.color.rgb if font.color and hasattr(font.color, 'rgb') else None,
+    }
+
+def _apply_run_font(run, backup):
+    """還原字體屬性到 run"""
+    if backup['name']:
+        run.font.name = backup['name']
+    if backup['size']:
+        run.font.size = backup['size']
+    if backup['bold'] is not None:
+        run.font.bold = backup['bold']
+    if backup['italic'] is not None:
+        run.font.italic = backup['italic']
+    if backup['color_rgb']:
+        run.font.color.rgb = backup['color_rgb']
+
+def _replace_text_in_paragraph(paragraph, old_text, new_text):
+    """
+    找到 paragraph 中包含 old_text 的範圍，備份其字體，
+    清除段落內所有 XML <a:r> 元素，寫入 new_text 後還原字體。
+    解決 PowerPoint 將同一文字方塊內容碎裂到多個 <a:r> 的問題。
+    """
+    # 標準化：去除所有零寬/控制字元，避免 PowerPoint XML 殘留的特殊分隔符（如 \u000b \u0007）干擾比對
+    import re
+    full_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ' ', paragraph.text)
+    if old_text not in full_text:
+        return False
+
+    # 找到涵蓋 old_text 的第一個 run（處理碎裂情況）
+    target_run = None
+    for run in paragraph.runs:
+        if old_text in run.text:
+            target_run = run
+            break
+
+    # 若 old_text 跨越多個 runs（如 "HK$7.89 Billion" split into 2 runs），
+    # 找不到完整匹配，就用第一個 run
+    if not target_run and paragraph.runs:
+        target_run = paragraph.runs[0]
+        # 仍然計算 full_text 來做置換
+
+    if target_run:
+        backup = _backup_run_font(target_run)
+    else:
+        backup = {'name': '微軟正黑體', 'size': None, 'bold': None, 'italic': None, 'color_rgb': None}
+
+    # 清除段落內所有 XML <a:r> 元素，只保留 <a:pPr>
+    p = paragraph._p
+    for r in list(p.xpath('./a:r')):
+        p.remove(r)
+
+    # 寫入新文字（new_text 完整替換 full_text 中的 old_text）
+    computed_new = full_text.replace(old_text, new_text, 1)
+    if paragraph.runs:
+        paragraph.runs[0].text = computed_new
+        _apply_run_font(paragraph.runs[0], backup)
+    else:
+        paragraph.text = computed_new
+
+    return True
+
+def _replace_text_in_shape(shape, old_text, new_text):
+    """處理形狀內所有段落（使用標準化 text 避免 \u000b 等控制字元干擾）"""
+    if not shape.has_text_frame:
+        return False
+    import re
+    for para in shape.text_frame.paragraphs:
+        normalized = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ' ', para.text)
+        if old_text in normalized:
+            _replace_text_in_paragraph(para, old_text, new_text)
+            return True
+    return False
+
+def _replace_text_in_table(shape, old_text, new_text):
+    """處理表格內所有單元格"""
+    if not shape.has_table:
+        return False
+    import re
+    for row in shape.table.rows:
+        for cell in row.cells:
+            if cell.has_text_frame:
+                for para in cell.text_frame.paragraphs:
+                    normalized = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ' ', para.text)
+                    if old_text in normalized:
+                        _replace_text_in_paragraph(para, old_text, new_text)
+                        return True
+    return False
+
+def auto_generate_pptx_report(merchant_name: str, category: str, selected_pains: list, template_bytes: bytes) -> bytes:
+    """
+    全自動 PPTX 生成：無需預埋 {{PLACEHOLDER}}，
+    自動探測目標文字並注入內容，保留原始設計。
+    """
+    from pptx import Presentation
+    import io
+
+    prs = Presentation(io.BytesIO(template_bytes))
+
+    # 取出品類數據
+    cat_data = CATEGORY_DATA.get(category, {})
+    cat_gmv = cat_data.get('gmv佔比', 'HKTVmall 強勢品類')
+    cat_tools = '、'.join(cat_data.get('熱門工具', []))
+    cat_pitch = cat_data.get('優勢話術', '')
+    pain_texts = [PAIN_POINT_MAPPING[p] for p in selected_pains if p in PAIN_POINT_MAPPING]
+    pain_primary = pain_texts[0] if pain_texts else cat_pitch
+
+    # 自動注入對照表：(slide_index, 尋找文字, 替換為)
+    # slide_index 為 0-based
+    INJECTIONS = [
+        # 封面：商戶名稱
+        (0,  '商戶合作方案',     f'{merchant_name} 商戶合作方案'),
+        # S08 (idx=7): GMV 數字
+        (7,  'HK$7.89 Billion',  cat_gmv),
+        # S31 (idx=30): 蘇寧 → 商戶名
+        (30, '蘇寧',              merchant_name),
+        # S32 (idx=31): 新乳酪品牌 → 商戶名
+        (31, '新乳酪品牌',        merchant_name),
+        # S33 (idx=32): 入駐新品牌 → 商戶名
+        (32, '入駐新品牌',        merchant_name),
+        # S34 (idx=33): 小品牌 → 商戶名
+        (33, '小品牌',            merchant_name),
+        # S37 (idx=36): 年費頁 → 加上商戶名
+        (36, 'HK$25,000',        f'HK$25,000 {merchant_name}'),
+    ]
+
+    for slide_idx, find_text, new_text in INJECTIONS:
+        if slide_idx >= len(prs.slides):
+            continue
+        slide = prs.slides[slide_idx]
+        for shape in slide.shapes:
+            # 處理群組物件（遞迴）
+            if shape.shape_type == 6:  # MSO_SHAPE_TYPE.GROUP
+                for gs in shape.shapes:
+                    _replace_text_in_shape(gs, find_text, new_text)
+                    _replace_text_in_table(gs, find_text, new_text)
+            # 處理普通文字方塊
+            if _replace_text_in_shape(shape, find_text, new_text):
+                break  # 找到就跳下一個 slide
+            # 處理表格
+            if _replace_text_in_table(shape, find_text, new_text):
+                break
+
+    buf = io.BytesIO()
+    prs.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
+
+
 # ──────────────────────────────────────────────
 # Streamlit UI（HKTVmall 綠 #106946 + 橙 #E47D21）
 # ──────────────────────────────────────────────
@@ -592,20 +755,22 @@ def main():
     # ── PPTX 簡報下載 ──
                 st.markdown("---")
                 st.markdown('<div class="section-header">📊 客製化招商簡報 PPTX</div>', unsafe_allow_html=True)
-                st.info("👆 請先上傳已埋好 {{PLACEHOLDER}} 標籤的 PPTX 範本（僅需操作一次），再點擊生成按鈕。")
-                
+
                 uploaded_template = st.file_uploader(
-                    "📎 上傳 PPTX 範本（必須包含 {{MERCHANT_NAME}} 等標籤）",
+                    "📎 上傳 HKTVmall 官方招商簡報 PPTX（任意版本均可）",
                     type=["pptx"],
                     key="pptx_template",
-                    help="使用 PPT 軟件，在想客製化的文字方塊中輸入 {{MERCHANT_NAME}}、{{PAIN_POINT_SOLUTION}} 等標籤後上傳。標籤會被 AI 內容完全取代。",
+                    help="直接上傳官方 49 頁簡報即可，系統會自動識別並注入內容，無需預埋任何標籤。",
                 )
 
                 if uploaded_template:
                     st.session_state["pptx_template_bytes"] = uploaded_template.getvalue()
-                    st.success(f"✅ 範本已載入：{uploaded_template.name}（{len(uploaded_template.getvalue()):,} bytes）")
+                    has_tags = b"{{" in uploaded_template.getvalue()
+                    mode_label = "🏷️ 模板模式（檢測到 {{TAG}}）" if has_tags else "🤖 全自動模式"
+                    st.session_state["pptx_mode"] = "template" if has_tags else "auto"
+                    st.info(f"✅ 範本已載入：{uploaded_template.name}（{len(uploaded_template.getvalue()):,} bytes）— {mode_label}")
 
-                if st.button("🎯  生成並下載 PPTX 簡報", use_container_width=True, disabled=not uploaded_template):
+                if st.button("🎯  一鍵生成客製化簡報", use_container_width=True, disabled=not uploaded_template):
                     if not merchant_name.strip():
                         st.warning("⚠️ 請先輸入商戶名稱")
                     else:
@@ -613,14 +778,23 @@ def main():
                         if not template_bytes:
                             st.warning("⚠️ 請先上傳 PPTX 範本")
                         else:
-                            with st.spinner("正在生成客製化簡報..."):
+                            mode = st.session_state.get("pptx_mode", "auto")
+                            with st.spinner("正在自動探測簡報結構並注入內容..."):
                                 try:
-                                    pptx_bytes = generate_pptx_report(
-                                        merchant_name=merchant_name,
-                                        category=category,
-                                        selected_pains=selected_pains,
-                                        template_bytes=template_bytes,
-                                    )
+                                    if mode == "template":
+                                        pptx_bytes = generate_pptx_report(
+                                            merchant_name=merchant_name,
+                                            category=category,
+                                            selected_pains=selected_pains,
+                                            template_bytes=template_bytes,
+                                        )
+                                    else:
+                                        pptx_bytes = auto_generate_pptx_report(
+                                            merchant_name=merchant_name,
+                                            category=category,
+                                            selected_pains=selected_pains,
+                                            template_bytes=template_bytes,
+                                        )
                                     st.success("✅ 簡報生成完成！")
                                     safe_name = "".join(c for c in merchant_name if c.isalnum() or c in (' ', '-', '_')).strip()
                                     st.download_button(
