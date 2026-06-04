@@ -235,18 +235,22 @@ def build_system_prompt(merchant_name, category, pain_points, custom_prompt, ton
 # ──────────────────────────────────────────────
 # 本地結構化生成（無需 API key）
 # ──────────────────────────────────────────────
-def generate_recruitment_content(merchant_name, category, pain_points, custom_prompt, tone, output_format):
+def generate_recruitment_content(merchant_name, category, business_desc, pain_points, custom_prompt, tone, output_format):
     kb = KNOWLEDGE_BASE
     cat_data = CATEGORY_DATA.get(category, next(iter(CATEGORY_DATA.values())))
     pain_texts = [PAIN_POINT_MAPPING[p] for p in pain_points if p in PAIN_POINT_MAPPING]
 
+    business_section = ""
+    if business_desc.strip():
+        business_section = f"\n了解到貴商戶主要從事：{business_desc.strip()}\n"
+
     openings = {
-        "誠懇專業型": f"您好，{merchant_name}團隊，\n\n非常高興有機會向您介紹 HKTVmall — 香港 No.1 網上購物平台，以及我們為您量身訂造的商戶合作方案。",
-        "強勢說服型": f"{merchant_name}，您好！\n\n我必須直接告訴您：在香港電商市場，已經有超過310萬消費者在HKTVmall購物，而您的品牌還未入駐，這是一個不容忽視的商機。",
-        "溫暖關懷型": f"您好呀，{merchant_name}！\n\n知道您一直在用心經營品牌，我們很希望能把 HKTVmall 的資源帶給您，讓您的生意事半功倍。",
-        "數據導向型": f"{merchant_name} 商戶負責人您好，\n\n以下是一份基於HKTVmall真實平台數據的商戶合作方案，供您決策參考：",
-        "簡潔利落型": f"{merchant_name}您好，HKTVmall誠邀入駐，重點如下：",
-        "輕鬆友好型": f"嘿，{merchant_name}！\n\n有個超棒的消息要告訴您 — HKTVmall 正在招募優質商戶，我覺得您超適合！",
+        "誠懇專業型": f"您好，{merchant_name}團隊，\n\n非常高興有機會向您介紹 HKTVmall — 香港 No.1 網上購物平台，以及我們為您量身訂造的商戶合作方案。{business_section}",
+        "強勢說服型": f"{merchant_name}，您好！\n\n我必須直接告訴您：在香港電商市場，已經有超過310萬消費者在HKTVmall購物，而您的品牌還未入駐，這是一個不容忽視的商機。{business_section}",
+        "溫暖關懷型": f"您好呀，{merchant_name}！\n\n知道您一直在用心經營品牌，我們很希望能把 HKTVmall 的資源帶給您，讓您的生意事半功倍。{business_section}",
+        "數據導向型": f"{merchant_name} 商戶負責人您好，\n\n以下是一份基於HKTVmall真實平台數據的商戶合作方案，供您決策參考：{business_section}",
+        "簡潔利落型": f"{merchant_name}您好，HKTVmall誠邀入駐，重點如下：{business_section}",
+        "輕鬆友好型": f"嘿，{merchant_name}！\n\n有個超棒的消息要告訴您 — HKTVmall 正在招募優質商戶，我覺得您超適合！{business_section}",
     }
 
     pain_section = ""
@@ -432,6 +436,12 @@ def main():
             help="選擇商戶主要銷售的產品品類"
         )
 
+        business_desc = st.text_input(
+            "主要業務描述",
+            placeholder="例如：日本進口零食、韓國護膚品、本地新鮮蔬果等",
+            help="輸入商戶銷售的具體產品描述，讓 AI 更精準生成招商提案"
+        )
+
         st.markdown("#### 痛點標籤（可多選）")
         pain_options = list(PAIN_POINT_MAPPING.keys())
         selected_pains = []
@@ -480,6 +490,7 @@ def main():
                     result = generate_recruitment_content(
                         merchant_name=merchant_name,
                         category=category,
+                        business_desc=business_desc,
                         pain_points=selected_pains,
                         custom_prompt=custom_prompt,
                         tone=tone,
