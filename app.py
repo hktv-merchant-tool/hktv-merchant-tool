@@ -230,7 +230,7 @@ def build_system_prompt(merchant_name, category, pain_points, custom_prompt, ton
     return "\n".join(prompt_parts)
 
 
-def generate_recruitment_content(merchant_name, category, pain_points, custom_prompt, tone, output_format):
+def generate_recruitment_content(merchant_name, category, merchant_desc, pain_points, custom_prompt, tone, output_format):
     kb = KNOWLEDGE_BASE
     cat_data = CATEGORY_DATA.get(category, list(CATEGORY_DATA.values())[0])
     pain_texts = [PAIN_POINT_MAPPING[p] for p in pain_points if p in PAIN_POINT_MAPPING]
@@ -246,6 +246,12 @@ def generate_recruitment_content(merchant_name, category, pain_points, custom_pr
     if pain_texts:
         pain_lines = "\n".join(f"  ✦ {t}" for t in pain_texts)
         pain_section = f"\n針對您可能面臨的挑戰，我們有以下解決方案：\n{pain_lines}\n"
+
+    # 加入商戶業務描述
+    desc_section = ""
+    if merchant_desc.strip():
+        desc_section = f"\n【商戶主營業務】{merchant_desc.strip()}\n"
+
     fee_section = f"""
 【入駐費用 — 簡單透明】
   ✦ 加盟年費：{kb['收費模式']['常規商戶加盟年費']}（含廣告金回贈）
@@ -278,6 +284,7 @@ HKTVmall 商戶招商提案
 
 {openings.get(tone, openings["誠懇專業型"])}
 
+{desc_section}
 {pain_section}
 【為何選擇 HKTVmall？】
   ✦ 香港No.1網上購物平台 — {kb['平台概覽']['獨立用戶']}獨立用戶、{kb['平台概覽']['月活躍設備']}月活設備
@@ -410,7 +417,7 @@ def main():
                         st.download_button(label="⬇️ 下載客製化PPT", data=result['ppt'].getvalue(), file_name=f"HKTVmall_招商提案_{merchant_name}.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
                 else:
                     with st.spinner("正在交叉匹配數據並生成提案..."):
-                        result = generate_recruitment_content(merchant_name=merchant_name, category=category, pain_points=selected_pains, custom_prompt=custom_prompt, tone=tone, output_format=output_format)
+                        result = generate_recruitment_content(merchant_name=merchant_name, category=category, merchant_desc=merchant_desc, pain_points=selected_pains, custom_prompt=custom_prompt, tone=tone, output_format=output_format)
                     st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
                     st.download_button(label="📥 下載提案文字檔", data=result, file_name=f"HKTVmall_招商提案_{merchant_name}.txt", mime="text/plain")
         else:
