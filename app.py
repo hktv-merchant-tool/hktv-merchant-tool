@@ -1,4 +1,4 @@
- """
+  """
   HKTVmall B2B 智慧招商動態生成工具
   Built on 2026 HKTVmall New Merchant Acquisition Deck [CHI].pptx
   """
@@ -327,52 +327,6 @@
       with col_right:
           st.markdown('<div class="section-header">📊 平台核心數據速覽</div>', unsafe_allow_html=True)
           m1, m2 = st.columns(2)
-          m1.markdown(f"""<div class="metric-card"><b>獨立用戶</b><br>#106946 {KNOWLEDGE_BASE['平台概覽']['獨立用戶']}</div>""",
-  unsafe_allow_html=True)
-          m2.markdown(f"""<div class="metric-card"><b>月活躍設備</b><br>#106946 {KNOWLEDGE_BASE['平台概覽']['月活躍設備']}</div>""",
-  unsafe_allow_html=True)
-          m3, m4 = st.columns(2)
-          m3.markdown(f"""<div class="metric-card"><b>2025 GMV</b><br>#106946 {KNOWLEDGE_BASE['平台概覽']['2025總GMV']}</div>""",
-  unsafe_allow_html=True)
-          m4.markdown(f"""<div class="metric-card"><b>每季購買頻率</b><br>#106946
-  {KNOWLEDGE_BASE['平台概覽']['每季購買頻率']}</div>""", unsafe_allow_html=True)
-          m5, m6 = st.columns(2)
-          m5.markdown(f"""<div class="metric-card"><b>倉庫網絡</b><br>#106946 {KNOWLEDGE_BASE['物流網絡']['倉庫數量']}</div>""",
-  unsafe_allow_html=True)
-          m6.markdown(f"""<div class="metric-card"><b>配送車隊</b><br>#106946 {KNOWLEDGE_BASE['物流網絡']['貨車數量']} +
-  O2O門市{KNOWLEDGE_BASE['物流網絡']['O2O門市']}</div>""", unsafe_allow_html=True)
-          st.markdown(f"""<div class="metric-card"><b>加盟年費</b><br>#106946
-  {KNOWLEDGE_BASE['收費模式']['常規商戶加盟年費']}（含廣告金回贈）</div>""", unsafe_allow_html=True)
-          st.markdown("---")
-          st.markdown('<div class="section-header">🤖 AI 招商提案生成區</div>', unsafe_allow_html=True)
-          generate_btn = st.button("🚀  生成招商提案")
-          if generate_btn:
-              if not merchant_name.strip():
-                  st.warning("⚠️ 請先輸入商戶名稱")
-              else:
-                  if output_format == "招商PPT（49頁）- 預設模板":
-                      with st.spinner("正在生成客製化招商PPT（49頁）..."):
-                          result = generate_merchant_ppt_with_notes(merchant_name=merchant_name, category=category,
-  pain_points=selected_pains, custom_content=custom_prompt, tone=tone)
-                      st.markdown("#### 📊 生成摘要")
-                      st.markdown(result['summary'])
-                      st.markdown("---")
-                      st.markdown("#### 📥 下載客製化PPT")
-                      st.download_button(label="⬇️ 下載招商PPT（49頁）", data=result['ppt'].getvalue(),
-  file_name=f"HKTVmall_招商提案_{merchant_name}.pptx",
-  mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
-                  elif output_format == "上傳PPT並客製化":
-                      if uploaded_ppt is None:
-                          st.warning("⚠️ 請先上傳PPT檔案")
-                      else:
-                          with st.spinner("正在客製化PPT..."):
-                              result = generate_custom_ppt(uploaded_ppt_bytes=uploaded_ppt, merchant_name=merchant_name,
-  category=category, merchant_desc=merchant_desc, pain_points=selected_pains, custom_content=custom_prompt, tone=tone)
-                          st.markdown("#### 📊 客製化摘要")
-                          st.markdown(result['summary'])
-                          st.markdown("---")
-                          st.markdown("#### 📥 下載客製化PPT")
-                          st.download_button(label="⬇️ 下載客製化PPT", data=result['ppt'].getvalue(),
   file_name=f"HKTVmall_招商提案_{merchant_name}.pptx",
   mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
                   else:
