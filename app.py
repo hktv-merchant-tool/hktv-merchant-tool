@@ -358,7 +358,6 @@ def main():
                 with cols[j]:
                     if st.checkbox(opt, value=False, key=f"pain_{opt}"):
                         selected_pains.append(opt)
-        merchant_desc = st.text_area("主要業務描述", placeholder="例如：永明凍肉有限公司是一家專營優質進口凍肉及本地鮮肉批發的貿易商，客戶主要為餐廳及酒店...")
         tone = st.selectbox("語氣風格", options=TONE_OPTIONS, index=0)
         output_format = st.selectbox("輸出格式", options=FORMAT_OPTIONS, index=0)
         st.markdown("#### ✍️ 自訂 Prompt 指令")
