@@ -324,16 +324,17 @@ def main():
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
     * { font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
-    .hero-banner { background: linear-gradient(135deg, #106946 0%, #0D5238 45%, #E47D21 100%); padding: 2rem 2rem 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; color: white; }
-    .hero-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .hero-sub { font-size: 0.95rem; opacity: 0.88; }
+    .hero-banner { background: linear-gradient(135deg, #106946 0%, #0D5238 45%, #E47D21 100%); padding: 1.5rem 2rem 1.2rem; border-radius: 16px; margin-bottom: 1rem; color: white; }
+    .hero-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .hero-sub { font-size: 0.9rem; opacity: 0.88; }
     .metric-card { background: #f8faf8; border-left: 4px solid #106946; padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.88rem; }
-    .section-header { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #106946; margin: 1rem 0 0.5rem; border-bottom: 2px solid #E47D21; padding-bottom: 4px; }
+    .section-header { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #106946; margin: 0.8rem 0 0.5rem; border-bottom: 2px solid #E47D21; padding-bottom: 4px; }
     .output-box { background: #fafafa; border: 1.5px solid #e0e0e0; border-radius: 12px; padding: 1.5rem; font-size: 0.9rem; line-height: 1.7; white-space: pre-wrap; min-height: 400px; }
-    div[data-testid="stMainBlockContainer"] { padding-top: 0; }
+    div[data-testid="stMainBlockContainer"] { padding-top: 1rem; }
     .stButton>button { background: linear-gradient(135deg, #106946, #0D5238) !important; color: white !important; font-weight: 700 !important; font-size: 1.05rem !important; padding: 0.6rem 2rem !important; border: 2px solid #E47D21 !important; border-radius: 10px !important; width: 100% !important; transition: all 0.3s !important; }
     .stButton>button:hover { background: linear-gradient(135deg, #E47D21, #F5A623) !important; box-shadow: 0 4px 15px rgba(228,125,33,0.4) !important; }
     div[data-testid="stExpander"] summary { font-weight: 600; color: #106946; }
+    header[data-testid="stHeader"] { background-color: #106946; }
     </style>
     """, unsafe_allow_html=True)
     st.markdown("""
