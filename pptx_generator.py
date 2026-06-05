@@ -175,7 +175,7 @@
           "",
           "聯絡人：HKTVmall招商團隊",
           "WhatsApp：+852 5283 4138",
-          "電郵：business@hktvmall.com",
+          "電郵：aog.merc@hktv.com.hk",
       ])
       output = io.BytesIO()
       prs.save(output)
