@@ -312,7 +312,7 @@ HKTVmall 商戶招商提案
 {'─'*60}
 
 📞 WhatsApp查詢：+852 5283 4138
-📧 電郵：business@hktvmall.com
+📧 電郵：aog.merc@hktv.com.hk
 🌐 網站：https://business.hktvmall.com
 """
     return content.strip()
