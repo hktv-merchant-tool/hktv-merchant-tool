@@ -200,7 +200,7 @@ FORMAT_OPTIONS = [
 
 def build_system_prompt(merchant_name, category, pain_points, custom_prompt, tone, output_format):
     kb = KNOWLEDGE_BASE
-    cat_data = CATEGORY_DATA.get(category, CATEGORY_DATA["其他"])
+    cat_data = CATEGORY_DATA.get(category, list(CATEGORY_DATA.values())[0])
     pain_texts = [PAIN_POINT_MAPPING[p] for p in pain_points if p in PAIN_POINT_MAPPING]
     prompt_parts = []
     prompt_parts.append(f"你是一位資深的HKTVmall招商專員，請根據以下信息生成一段針對目標商戶的招商推銷內容。\n")
@@ -232,7 +232,7 @@ def build_system_prompt(merchant_name, category, pain_points, custom_prompt, ton
 
 def generate_recruitment_content(merchant_name, category, pain_points, custom_prompt, tone, output_format):
     kb = KNOWLEDGE_BASE
-    cat_data = CATEGORY_DATA.get(category, CATEGORY_DATA["其他"])
+    cat_data = CATEGORY_DATA.get(category, list(CATEGORY_DATA.values())[0])
     pain_texts = [PAIN_POINT_MAPPING[p] for p in pain_points if p in PAIN_POINT_MAPPING]
     openings = {
         "誠懇專業型": f"您好，{merchant_name}團隊，\n\n非常高興有機會向您介紹 HKTVmall — 香港 No.1 網上購物平台，以及我們為您量身訂造的商戶合作方案。",
