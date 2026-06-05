@@ -141,12 +141,13 @@ def generate_merchant_ppt(
         BytesIO對象，可直接作為下載檔案
     """
 
-    # 預設模板路徑
+    # 預設模板路徑 - 從 GitHub 讀取
     if template_path is None:
-        template_path = "/mnt/c/Users/cylee/Desktop/HKTVmall Plan 2026/Local Standard Merchant/2026 HKTVmall New Merchant Acquisition Deck [CHI].pptx"
-
-    # 載入PPT
-    prs = Presentation(template_path)
+        import urllib.request
+        template_url = "https://raw.githubusercontent.com/hktv-merchant-tool/hktv-merchant-tool/main/template/2026%20HKTVmall%20New%20Merchant%20Acquisition%20Deck%20[CHI].pptx"
+        # 下載至記憶體
+        template_bytes = urllib.request.urlopen(template_url).read()
+        prs = Presentation(io.BytesIO(template_bytes))
 
     # ─── Slide 1: 封面 ───
     # 將"No.1 香港網上購物平台商戶合作方案" 改為 "XXX 香港網上購物平台商戶合作方案"
@@ -333,9 +334,12 @@ def generate_merchant_ppt_with_notes(
     """
 
     if template_path is None:
-        template_path = "/mnt/c/Users/cylee/Desktop/HKTVmall Plan 2026/Local Standard Merchant/2026 HKTVmall New Merchant Acquisition Deck [CHI].pptx"
-
-    prs = Presentation(template_path)
+        import urllib.request
+        template_url = "https://raw.githubusercontent.com/hktv-merchant-tool/hktv-merchant-tool/main/template/2026%20HKTVmall%20New%20Merchant%20Acquisition%20Deck%20[CHI].pptx"
+        template_bytes = urllib.request.urlopen(template_url).read()
+        prs = Presentation(io.BytesIO(template_bytes))
+    else:
+        prs = Presentation(template_path)
     custom_slides = []
 
     # Slide 1: 封面 - 加上商戶名稱
