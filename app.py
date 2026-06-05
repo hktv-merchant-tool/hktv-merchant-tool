@@ -348,6 +348,7 @@ def main():
         st.markdown('<div class="section-header">📋 商戶資料輸入</div>', unsafe_allow_html=True)
         merchant_name = st.text_input("商戶名稱", placeholder="例如：永明凍肉有限公司", help="輸入目標招商商戶的全稱或簡稱")
         category = st.selectbox("產品品類", options=list(CATEGORY_DATA.keys()), help="選擇商戶主要銷售的產品品類")
+        merchant_desc = st.text_area("主要業務描述", placeholder="例如：凍肉、零食、飲料、家品電器...", help="簡述商戶主要銷售的產品或服務範圍")
         st.markdown("#### 痛點標籤（可多選）")
         pain_options = list(PAIN_POINT_MAPPING.keys())
         selected_pains = []
