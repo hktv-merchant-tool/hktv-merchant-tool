@@ -188,7 +188,7 @@ TONE_OPTIONS = [
 ]
 
 FORMAT_OPTIONS = [
-    "招商信（完整段落）",
+    "Pitching Email",
     "WhatsApp短訊（200字以內）",
     "電話推銷話術",
     "社交媒體帖文",
